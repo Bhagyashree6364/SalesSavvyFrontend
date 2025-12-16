@@ -6,7 +6,8 @@ import ProductList from "./ProductList";
 import Footer from "./Footer";
 import "./styles.css";
 
-axios.defaults.withCredentials = true;  // send cookies with all requests [web:29][web:32]
+// Always send cookies if backend also uses them
+axios.defaults.withCredentials = true;
 
 export default function CustomerHomePage() {
   const [products, setProducts] = useState([]);
@@ -14,20 +15,53 @@ export default function CustomerHomePage() {
   const [username, setUsername] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
 
+  // Helper to get Authorization header from localStorage
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    if (!token) return {};
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  };
+
   const loadProducts = async (category) => {
     try {
-      const response = await axios.get("http://localhost:9090/api/products", {
-        params: category ? { category } : {},
-      });
+      const response = await axios.get(
+        "http://localhost:9090/api/products",
+        {
+          params: category ? { category } : {},
+          headers: {
+            ...getAuthHeaders(),
+          },
+        }
+      );
+
+      // EXPECTED BACKEND RESPONSE EXAMPLES:
+      // Option A: returns array directly -> data is Product[]
+      // Option B: returns wrapper -> { products: [...], user: {...} }
+
       const data = response.data;
-      if (data.user) {
-        setUsername(data.user.name);
+
+      // If backend sends username separately, use that; otherwise from localStorage
+      if (data.user && data.user.username) {
+        setUsername(data.user.username);
+      } else {
+        const storedUsername = localStorage.getItem("username");
+        if (storedUsername) setUsername(storedUsername);
       }
-      if (data.products) {
+
+      if (Array.isArray(data)) {
+        setProducts(data);
+      } else if (data.products) {
         setProducts(data.products);
+      } else {
+        setProducts([]);
       }
-      // if backend sends cartCount later:
-      // if (data.cartCount !== undefined) setCartCount(data.cartCount);
+
+      // Optional: if backend returns cartCount
+      if (data.cartCount !== undefined) {
+        setCartCount(data.cartCount);
+      }
     } catch (err) {
       console.error("Error fetching products", err);
     }
@@ -35,6 +69,7 @@ export default function CustomerHomePage() {
 
   useEffect(() => {
     loadProducts(selectedCategory);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
   const handleCategoryClick = (category) => {
@@ -46,13 +81,19 @@ export default function CustomerHomePage() {
       await axios.post(
         "http://localhost:9090/api/cart/add",
         {
-          productId: product.product_id, // ensure this matches your Product field
+          productId: product.product_id, // make sure this matches your backend field
           quantity: 1,
         },
-        { withCredentials: true }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+          withCredentials: true,
+        }
       );
+
       alert("Item added to cart");
-      // optional: increase cartCount locally
       setCartCount((prev) => prev + 1);
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -62,10 +103,20 @@ export default function CustomerHomePage() {
 
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost:9090/api/logout");
-      window.location.href = "/";
+      // Optional: if you have logout endpoint
+      await axios.post(
+        "http://localhost:9090/api/logout",
+        {},
+        { headers: { ...getAuthHeaders() } }
+      );
     } catch (err) {
       console.error("Error during logout", err);
+    } finally {
+      // Clear localStorage and go to login
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("username");
+      window.location.href = "/";
     }
   };
 
@@ -80,3 +131,4 @@ export default function CustomerHomePage() {
     </div>
   );
 }
+

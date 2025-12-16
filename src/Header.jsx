@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import CartIcon from "./CartIcon";
 import ProfileDropdown from "./ProfileDropdown";
 import "./styles.css";
+import { Link } from "react-router-dom";
 
 export default function Header({ cartCount, username, onLogout }) {
   const navigate = useNavigate();
@@ -22,6 +23,9 @@ export default function Header({ cartCount, username, onLogout }) {
         </div>
         <ProfileDropdown username={username} onLogout={onLogout} />
       </div>
+      <li>
+  <Link to="/orders">My Orders</Link>
+</li>
     </header>
   );
 }

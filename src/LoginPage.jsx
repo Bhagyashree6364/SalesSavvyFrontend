@@ -17,21 +17,37 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
 
-      if (response.ok) {
-        if (data.role === "CUSTOMER") {
-          navigate("/customerhome");
-        } else if (data.role === "ADMIN") {
-          navigate("/adminhome");
-        } else {
-          throw new Error("Invalid user role");
-        }
-      } else {
+      if (!response.ok) {
         throw new Error(data.message || "Login failed");
+      }
+
+      // EXPECTED BACKEND RESPONSE (example):
+      // {
+      //   "token": "jwt-token-here",
+      //   "role": "CUSTOMER",
+      //   "username": "Bhagya"
+      // }
+
+      if (!data.token) {
+        throw new Error("No token received from server");
+      }
+
+      // Save token and basic user info for later requests
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("username", data.username || username);
+
+      if (data.role === "CUSTOMER") {
+        navigate("/customerhome");
+      } else if (data.role === "ADMIN") {
+        navigate("/adminhome");
+      } else {
+        throw new Error("Invalid user role");
       }
     } catch (err) {
       setError(err.message);
@@ -47,7 +63,9 @@ export default function LoginPage() {
 
         <form onSubmit={handleSignin} className="form-content">
           <div className="form-group">
-            <label htmlFor="username" className="form-label">Username</label>
+            <label htmlFor="username" className="form-label">
+              Username
+            </label>
             <input
               id="username"
               type="text"
@@ -60,7 +78,9 @@ export default function LoginPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password" className="form-label">Password</label>
+            <label htmlFor="password" className="form-label">
+              Password
+            </label>
             <input
               id="password"
               type="password"
