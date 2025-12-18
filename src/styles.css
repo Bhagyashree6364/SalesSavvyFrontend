@@ -112,3 +112,11 @@
 .dropdown-item:hover {
   color: #1976d2;
 }
+.admin-dashboard { padding: 20px; }
+.card-grid { display: flex; flex-wrap: wrap; gap: 16px; }
+.admin-card { padding: 16px; background:#f3f3f3; cursor:pointer; border-radius:8px; }
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; }
+.modal-container { background:white; padding:20px; border-radius:8px; width:320px; }
+.form-group { margin-bottom:12px; }
+.modal-actions { display:flex; justify-content:flex-end; gap:8px; }
+.analytics-box { margin-top:16px; padding:12px; background:#fafafa; }
